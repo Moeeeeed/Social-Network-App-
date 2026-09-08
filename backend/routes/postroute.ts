@@ -1,10 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import Post from '../models/post';
+import { verifyToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
-router.post('/', async (req: Request, res: Response) => {
+
+router.post('/', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
-    const { content, author } = req.body;
+    const { content } = req.body;
+    const author = req.user?.id;
     
     const newPost = new Post({ content, author });
     const savedPost = await newPost.save();
@@ -13,13 +16,12 @@ router.post('/', async (req: Request, res: Response) => {
       message: 'Post created successfully',
       post: savedPost
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Something went wrong creating the post' });
   }
 });
 
-
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req, res: Response) => {
   try {
     const page = Number.parseInt(req.query.page as string) || 1;
     const limit = Number.parseInt(req.query.limit as string) || 10;
@@ -40,12 +42,12 @@ router.get('/', async (req: Request, res: Response) => {
       totalPosts,
       posts
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Could not fetch posts' });
   }
 });
 
-router.put('/:id', async (req: Request, res: Response) => {
+router.put('/:id', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const updatedPost = await Post.findByIdAndUpdate(
       req.params.id,
@@ -61,13 +63,12 @@ router.put('/:id', async (req: Request, res: Response) => {
       message: 'Post updated successfully',
       post: updatedPost,
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Could not update the post' });
   }
 });
 
-
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const deletedPost = await Post.findByIdAndDelete(req.params.id);
 
@@ -76,7 +77,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     res.status(200).json({ message: 'Post was deleted successfully' });
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Could not delete the post' });
   }
 });
