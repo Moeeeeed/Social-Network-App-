@@ -3,9 +3,11 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface IUser extends Document {
   name: string;
   email: string;
-  password?: string;
+  password: string;
   followers: mongoose.Types.ObjectId[];
   following: mongoose.Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>({
@@ -17,7 +19,14 @@ const userSchema = new Schema<IUser>({
     type: String,
     required: true,
     unique: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email address'],
+    validate: {
+      validator: (email: string) => {
+        const atIndex = email.indexOf('@');
+        const dotIndex = email.lastIndexOf('.');
+        return atIndex > 0 && dotIndex > atIndex + 1 && dotIndex < email.length - 1;
+      },
+      message: 'Please enter a valid email address',
+    },
   },
   password: {
     type: String,
