@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import User from '../models/user';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { verifyToken, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -85,10 +86,10 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/follow', async (req: Request, res: Response) => {
+router.post('/:id/follow', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const userToFollowId = req.params.id; 
-    const { currentUserId } = req.body;
+    const currentUserId = req.user?.id;
 
     if (userToFollowId === currentUserId) {
       return res.status(400).json({ error: 'You cannot follow yourself' });
@@ -108,10 +109,10 @@ router.post('/:id/follow', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/unfollow', async (req: Request, res: Response) => {
+router.post('/:id/unfollow', verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const userToUnfollowId = req.params.id; 
-    const { currentUserId } = req.body;
+    const currentUserId = req.user?.id;
 
     await User.findByIdAndUpdate(currentUserId, {
       $pull: { following: userToUnfollowId }
